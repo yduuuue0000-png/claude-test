@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
 import { supabase, type Contact } from "@/lib/supabase";
 import { digitsOnly, formatPhone } from "@/lib/phone";
 
@@ -16,7 +15,7 @@ type FormState = {
 
 const emptyForm: FormState = { name: "", phone: "", email: "", group_name: "", memo: "", favorite: false };
 
-export default function ContactsApp({ session }: { session: Session }) {
+export default function ContactsApp() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,10 +80,6 @@ export default function ContactsApp({ session }: { session: Session }) {
     <main className="container">
       <header className="topbar">
         <h1>📒 전화번호부</h1>
-        <div className="user">
-          <span className="muted">{session.user.email}</span>
-          <button onClick={() => supabase.auth.signOut()}>로그아웃</button>
-        </div>
       </header>
 
       <div className="toolbar">

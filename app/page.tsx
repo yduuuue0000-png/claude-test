@@ -1,28 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase, supabaseConfigured } from "@/lib/supabase";
-import AuthForm from "./AuthForm";
+import { supabaseConfigured } from "@/lib/supabase";
 import ContactsApp from "./ContactsApp";
 
 export default function Home() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!supabaseConfigured) {
-      setLoading(false);
-      return;
-    }
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
   if (!supabaseConfigured) {
     return (
       <main className="container narrow">
@@ -36,7 +17,5 @@ export default function Home() {
     );
   }
 
-  if (loading) return <main className="container narrow"><p className="muted">불러오는 중…</p></main>;
-  if (!session) return <AuthForm />;
-  return <ContactsApp session={session} />;
+  return <ContactsApp />;
 }

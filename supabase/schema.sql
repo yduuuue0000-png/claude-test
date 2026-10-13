@@ -1,8 +1,8 @@
 -- Supabase 대시보드 > SQL Editor 에서 이 파일 내용을 실행하세요.
+-- 로그인 없이 사용하는 버전입니다. 기존(로그인 버전) 테이블에 다시 실행해도 됩니다.
 
 create table if not exists public.contacts (
   id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
   name        text not null,
   phone       text not null,
   email       text,
@@ -13,7 +13,12 @@ create table if not exists public.contacts (
   updated_at  timestamptz not null default now()
 );
 
-create index if not exists contacts_user_id_idx on public.contacts(user_id);
+-- 기존 로그인 버전에서 넘어오는 경우: 사용자별 정책과 user_id 컬럼 제거
+drop policy if exists "select own contacts" on public.contacts;
+drop policy if exists "insert own contacts" on public.contacts;
+drop policy if exists "update own contacts" on public.contacts;
+drop policy if exists "delete own contacts" on public.contacts;
+alter table public.contacts drop column if exists user_id;
 
 -- 수정 시 updated_at 자동 갱신
 create or replace function public.set_updated_at()
@@ -29,21 +34,10 @@ create trigger contacts_set_updated_at
   before update on public.contacts
   for each row execute function public.set_updated_at();
 
--- Row Level Security: 로그인한 사용자는 자기 연락처만 볼 수 있음
+-- Row Level Security: 로그인 없이 누구나 조회·추가·수정·삭제 가능
+-- (주의: 앱 주소를 아는 사람은 모두 연락처를 보고 바꿀 수 있습니다)
 alter table public.contacts enable row level security;
 
-drop policy if exists "select own contacts" on public.contacts;
-create policy "select own contacts" on public.contacts
-  for select using (auth.uid() = user_id);
-
-drop policy if exists "insert own contacts" on public.contacts;
-create policy "insert own contacts" on public.contacts
-  for insert with check (auth.uid() = user_id);
-
-drop policy if exists "update own contacts" on public.contacts;
-create policy "update own contacts" on public.contacts
-  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-drop policy if exists "delete own contacts" on public.contacts;
-create policy "delete own contacts" on public.contacts
-  for delete using (auth.uid() = user_id);
+drop policy if exists "public access" on public.contacts;
+create policy "public access" on public.contacts
+  for all to anon, authenticated using (true) with check (true);
